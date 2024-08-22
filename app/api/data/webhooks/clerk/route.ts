@@ -56,31 +56,37 @@ export async function POST(req: Request) {
   const eventType = evt.type
 
   if (eventType === "user.created"){
-    const {id, email_addresses, image_url, first_name, last_name, username} = evt.data;
+    try {
+        const { id, email_addresses, image_url, first_name, last_name, username } = evt.data;
 
-    const user ={
-        clerkId:id,
-        email: email_addresses[0].email_address,
-        imageUrl: image_url,
-        firstName: first_name,
-        lastName: last_name,
-        username: username
+        const user = {
+            clerkId: id,
+            email: email_addresses[0].email_address,
+            imageUrl: image_url,
+            firstName: first_name,
+            lastName: last_name,
+            username: username
+        };
+        console.log("Creating user:", user);
+
+        const newUser = await createUser(user);
+
+        if (newUser) {
+            await clerkClient.users.updateUserMetadata(id, {
+                publicMetadata: {
+                    userId: newUser._id,
+                }
+            });
+        }
+
+        return NextResponse.json({ message: "New user created", user: newUser });
+    } catch (error) {
+        console.error("Error handling user.created event:", error);
+        return new Response('Error occurred while creating user', {
+            status: 500,
+        });
     }
-    console.log(user);
-
-    const newUser = await createUser(user);
-
-    if (newUser){
-        await clerkClient.users.updateUserMetadata(id, {
-            publicMetadata: {
-                userId: newUser._id,
-            }
-        })
-    }
-
-    return NextResponse.json({message:"New user created", user: newUser});
-
-  }
+}
 
   console.log(`Webhook with and ID of ${id} and type of ${eventType}`)
   console.log('Webhook body:', body)
