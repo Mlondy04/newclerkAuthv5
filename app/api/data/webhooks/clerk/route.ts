@@ -71,6 +71,10 @@ export async function POST(req: Request) {
 
         const newUser = await createUser(user);
 
+        if (!newUser) {
+          throw new Error("Failed to create user in the database.");
+      }
+
         if (newUser) {
             await clerkClient.users.updateUserMetadata(id, {
                 publicMetadata: {
